@@ -514,7 +514,7 @@ G2L["33"]["Text"] = [[Chams]];
 G2L["33"]["Position"] = UDim2.new(1.62455, 0, -0.63174, 0);
 
 
--- StarterGui.ScreenGui.Frame.Visualss.WeaponChams
+-- StarterGui.ScreenGui.Frame.Visualss.Daytime
 G2L["34"] = Instance.new("TextButton", G2L["26"]);
 G2L["34"]["Modal"] = true;
 G2L["34"]["TextSize"] = 14;
@@ -522,18 +522,18 @@ G2L["34"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["34"]["BackgroundColor3"] = Color3.fromRGB(72, 72, 72);
 G2L["34"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
 G2L["34"]["Size"] = UDim2.new(0, 13, 0, 15);
-G2L["34"]["Name"] = [[WeaponChams]];
+G2L["34"]["Name"] = [[Daytime]];
 G2L["34"]["BorderColor3"] = Color3.fromRGB(23, 23, 23);
 G2L["34"]["Text"] = [[]];
 G2L["34"]["Position"] = UDim2.new(0.05257, 0, 0.834, 0);
 
 
--- StarterGui.ScreenGui.Frame.Visualss.WeaponChams.LocalScript
+-- StarterGui.ScreenGui.Frame.Visualss.Daytime.LocalScript
 G2L["35"] = Instance.new("LocalScript", G2L["34"]);
 
 
 
--- StarterGui.ScreenGui.Frame.Visualss.WeaponChams.TextLabel
+-- StarterGui.ScreenGui.Frame.Visualss.Daytime.TextLabel
 G2L["36"] = Instance.new("TextLabel", G2L["34"]);
 G2L["36"]["BorderSizePixel"] = 0;
 G2L["36"]["BackgroundColor3"] = Color3.fromRGB(206, 206, 206);
@@ -543,11 +543,11 @@ G2L["36"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["36"]["BackgroundTransparency"] = 1;
 G2L["36"]["Size"] = UDim2.new(0, 33, 0, 33);
 G2L["36"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["36"]["Text"] = [[Weapon Chams]];
-G2L["36"]["Position"] = UDim2.new(3.39378, 0, -0.83174, 0);
+G2L["36"]["Text"] = [[Fullbright]];
+G2L["36"]["Position"] = UDim2.new(2.31686, 0, -0.83174, 0);
 
 
--- StarterGui.ScreenGui.Frame.Visualss.WeaponChams.UIAspectRatioConstraint
+-- StarterGui.ScreenGui.Frame.Visualss.Daytime.UIAspectRatioConstraint
 G2L["37"] = Instance.new("UIAspectRatioConstraint", G2L["34"]);
 
 
@@ -1317,7 +1317,7 @@ task.spawn(C_3);
 -- StarterGui.ScreenGui.Frame.LocalScript
 local function C_5()
 local script = G2L["5"];
-	--// Draggable Frame Script
+	--// Draggable Frame Script (fixed)
 	local frame = script.Parent
 	local UserInputService = game:GetService("UserInputService")
 	
@@ -1337,37 +1337,33 @@ local script = G2L["5"];
 		)
 	end
 	
-	-- Mouse button pressed
+	-- Only start dragging if the top-most GuiObject under the pointer is the frame itself
 	frame.InputBegan:Connect(function(input)
-		-- only respond to left mouse button
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			-- Determine what GuiObject was actually clicked (if available)
-			local clickedObject
-			local ok, res = pcall(function() return input.Target end)
-			if ok then clickedObject = res end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			-- Use the screen-space position to query top-most GuiObjects
+			local pos = input.Position
+			local guiObjects = UserInputService:GetGuiObjectsAtPosition(pos.X, pos.Y)
+			local top = (guiObjects and guiObjects[1]) or nil
 	
-			-- If there is a clicked object and it's not the frame itself, do NOT start dragging.
-			-- This prevents dragging when clicking on child frames/buttons/etc.
-			if clickedObject and clickedObject ~= frame then
-				return
+			-- Start drag only when the frame is the top-most object
+			if top == frame then
+				dragging = true
+				dragStart = input.Position
+				startPos = frame.Position
+	
+				-- stop dragging when this input ends
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						dragging = false
+					end
+				end)
 			end
-	
-			-- No clickedObject or clickedObject == frame -> start dragging
-			dragging = true
-			dragStart = input.Position
-			startPos = frame.Position
-	
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
 		end
 	end)
 	
-	-- Mouse movement while dragging
+	-- Track mouse movement so we know which input is the drag source
 	frame.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement then
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 			dragInput = input
 		end
 	end)
@@ -2021,7 +2017,7 @@ local script = G2L["2c"];
 	
 end;
 task.spawn(C_2c);
--- StarterGui.ScreenGui.Frame.Visualss.WeaponChams.LocalScript
+-- StarterGui.ScreenGui.Frame.Visualss.Daytime.LocalScript
 local function C_35()
 local script = G2L["35"];
 	--// Rainbow Gun Toggle Script
@@ -2353,6 +2349,7 @@ local script = G2L["3f"];
 					local data = hbMap[player]
 					if not data then
 						-- couldn't create drawing objects
+						goto continue_player
 					end
 	
 					local minX, minY, maxX, maxY = getScreenBoundsFromCharacter(char)
@@ -2361,6 +2358,7 @@ local script = G2L["3f"];
 						data.bg.Visible = false
 						data.fill.Visible = false
 						if data.outline then data.outline.Visible = false end
+						goto continue_player
 					end
 	
 					-- compute bar geometry
@@ -2411,6 +2409,7 @@ local script = G2L["3f"];
 					removeHealthbarForPlayer(player)
 				end
 			end
+			::continue_player::
 		end
 	end)
 	
@@ -2639,11 +2638,96 @@ local script = G2L["4d"];
 	-- ---------- end slider ----------
 	
 	-- toggle main function
+	local movementConnection
+	
+	local function startMovement()
+		if movementConnection then movementConnection:Disconnect() end
+		-- reset state every time you toggle on
+		horizontalSpeed = 0
+		horizontalVelocity = Vector3.new(0,0,0)
+	
+		movementConnection = RunService.RenderStepped:Connect(function(delta)
+			if not active or not humanoid or not rootPart then return end
+	
+			-- require holding space
+			if not UserInputService:IsKeyDown(Enum.KeyCode.Space) then return end
+	
+			local userMax = math.clamp(speed, SPEED_MIN, SPEED_MAX)
+			local desiredDir = computeDesiredDirection()
+			local grounded = isGrounded()
+	
+			-- MAGNITUDE
+			if desiredDir.Magnitude > 0 then
+				local acc = grounded and accelGround or accelAir
+				horizontalSpeed = math.min(userMax, horizontalSpeed + acc * delta)
+			else
+				horizontalSpeed = horizontalSpeed * math.clamp(1 - friction * delta, 0, 1)
+				if horizontalSpeed < 0.5 then horizontalSpeed = 0 end
+			end
+	
+			-- DIRECTION
+			local moveDir = Vector3.new(0,0,0)
+			if desiredDir.Magnitude > 0 then
+				moveDir = desiredDir
+			else
+				local hv = Vector3.new(horizontalVelocity.X, 0, horizontalVelocity.Z)
+				if hv.Magnitude > 0 then moveDir = hv.Unit end
+			end
+	
+			horizontalVelocity = Vector3.new(moveDir.X * horizontalSpeed, 0, moveDir.Z * horizontalSpeed)
+	
+			-- ----- BHOP -----
+			if mode == "Bhop" then
+				local curY = rootPart.Velocity.Y
+				if grounded then
+					pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end)
+				end
+				pcall(function()
+					rootPart.Velocity = Vector3.new(horizontalVelocity.X, curY, horizontalVelocity.Z)
+				end)
+				return
+			end
+	
+			-- ----- CFRAME -----
+			if mode == "CFRAME" then
+				local curY = rootPart.Velocity.Y
+				if grounded then
+					pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end)
+					pcall(function()
+						rootPart.Velocity = Vector3.new(horizontalVelocity.X, curY, horizontalVelocity.Z)
+					end)
+					pcall(function()
+						rootPart.CFrame = rootPart.CFrame + Vector3.new(horizontalVelocity.X * delta, 0, horizontalVelocity.Z * delta)
+					end)
+				else
+					local disp = Vector3.new(horizontalVelocity.X * delta, 0, horizontalVelocity.Z * delta)
+					if disp.Magnitude > 1e-6 then
+						pcall(function()
+							rootPart.CFrame = rootPart.CFrame + disp
+						end)
+					end
+				end
+				return
+			end
+		end)
+	end
+	
 	button.MouseButton1Click:Connect(function()
 		active = not active
 		updateButtonUI()
+	
+		if active then
+			startMovement()
+		else
+			if movementConnection then
+				movementConnection:Disconnect()
+				movementConnection = nil
+			end
+		end
 	end)
+	
 	updateButtonUI()
+	
 	
 	-- helper: desired instantaneous unit direction (camera-relative) from WASD
 	local function computeDesiredDirection()
@@ -2788,6 +2872,7 @@ local script = G2L["5c"];
 	-- Function to enable NoClip
 	local function noclip()
 		Clip = false
+	
 		local function Nocl()
 			if not Clip and game.Players.LocalPlayer.Character then
 				for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
@@ -2796,13 +2881,15 @@ local script = G2L["5c"];
 					end
 				end
 			end
-			task.wait(0.21)
 		end
+	
 		-- disconnect existing connection if any
 		if Noclip then
 			pcall(function() Noclip:Disconnect() end)
 			Noclip = nil
 		end
+	
+		-- connect fresh
 		Noclip = RunService.Stepped:Connect(Nocl)
 	end
 	
@@ -2814,6 +2901,7 @@ local script = G2L["5c"];
 		end
 		Clip = true
 	end
+	
 	
 	-- Toggle function
 	local function toggleNoClip()
