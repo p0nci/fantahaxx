@@ -1317,16 +1317,25 @@ task.spawn(C_3);
 -- StarterGui.ScreenGui.Frame.LocalScript
 local function C_5()
 local script = G2L["5"];
-	--// Draggable Frame Script (fixed)
+	-- Drag the parent frame even when clicking on any of its children
 	local frame = script.Parent
 	local UserInputService = game:GetService("UserInputService")
+	
+	frame.Active = true      -- ensure it can capture input
+	frame.Selectable = false
 	
 	local dragging = false
 	local dragInput
 	local dragStart
 	local startPos
 	
-	-- Function to update frame position while dragging
+	local function pointInFrame(gui, point)
+		local pos = gui.AbsolutePosition
+		local size = gui.AbsoluteSize
+		return point.X >= pos.X and point.X <= pos.X + size.X
+			and point.Y >= pos.Y and point.Y <= pos.Y + size.Y
+	end
+	
 	local function update(input)
 		local delta = input.Position - dragStart
 		frame.Position = UDim2.new(
@@ -1337,40 +1346,36 @@ local script = G2L["5"];
 		)
 	end
 	
-	-- Only start dragging if the top-most GuiObject under the pointer is the frame itself
-	frame.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			-- Use the screen-space position to query top-most GuiObjects
-			local pos = input.Position
-			local guiObjects = UserInputService:GetGuiObjectsAtPosition(pos.X, pos.Y)
-			local top = (guiObjects and guiObjects[1]) or nil
-	
-			-- Start drag only when the frame is the top-most object
-			if top == frame then
+	-- Start dragging if the pointer is anywhere inside the parent frame (or its children)
+	UserInputService.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			local p = input.Position
+			if pointInFrame(frame, Vector2.new(p.X, p.Y)) then
 				dragging = true
 				dragStart = input.Position
 				startPos = frame.Position
-	
-				-- stop dragging when this input ends
-				input.Changed:Connect(function()
-					if input.UserInputState == Enum.UserInputState.End then
-						dragging = false
-					end
-				end)
+				dragInput = input
 			end
 		end
 	end)
 	
-	-- Track mouse movement so we know which input is the drag source
-	frame.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-			dragInput = input
+	-- Move while dragging
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input == dragInput
+			or input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input)
 		end
 	end)
 	
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and input == dragInput then
-			update(input)
+	-- Stop dragging
+	UserInputService.InputEnded:Connect(function(input)
+		if input == dragInput
+			or input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+			dragInput = nil
 		end
 	end)
 	
@@ -2349,7 +2354,6 @@ local script = G2L["3f"];
 					local data = hbMap[player]
 					if not data then
 						-- couldn't create drawing objects
-						goto continue_player
 					end
 	
 					local minX, minY, maxX, maxY = getScreenBoundsFromCharacter(char)
@@ -2358,7 +2362,6 @@ local script = G2L["3f"];
 						data.bg.Visible = false
 						data.fill.Visible = false
 						if data.outline then data.outline.Visible = false end
-						goto continue_player
 					end
 	
 					-- compute bar geometry
@@ -2409,7 +2412,6 @@ local script = G2L["3f"];
 					removeHealthbarForPlayer(player)
 				end
 			end
-			::continue_player::
 		end
 	end)
 	
